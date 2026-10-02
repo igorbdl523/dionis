@@ -1,101 +1,54 @@
+//            BANCO DE DADOS     HTTP
+// [C]reat    insert             post
+// [R]read    select             get
+// [U]pdate   update             put
+// [U]pdate   update             patch
+// [D]elete   delete             delete
+
+import frontend from "./index.html"
 import { db } from "./db"
 
 const srv = Bun.serve({
     port: 3000,
-
     routes: {
-        "/user": {
+        "/": frontend,
 
+        "/user": {
             GET: () => {
-                const query = db.query(`
-                    SELECT * FROM users
-                `)
+                const query = db.query(`SELECT * FROM users`)
                 const data = query.all()
                 return Response.json(data)
             },
 
             POST: async (req) => {
-                let body
-                try {
-                    body = await req.body.json()
-                } catch (error: any) {
-                    return Response.json({
-                        message: "JSON mal formado",
-                        parseError: error
-                    }, { status: 400 })
-                }
-
-                if (!body.username)
-                    return Response.json({
-                        message: "Falta da informação: username"
-                    }, { status: 400 })
-
-                if (!body.email)
-                    return Response.json({
-                        message: "Falta da informação: email"
-                    }, { status: 400 })
-
-                if (!body.password)
-                    return Response.json({
-                        message: "Falta da informação: password"
-                    }, { status: 400 })
-
+                const body = await req.body.json()
                 const query = db.query(`
                     INSERT INTO users(username, email, password_hash)
                     VALUES(:username, :email, :password_hash)
                 `)
-
-                try {
-
-                    const dbResp = query.run({
-                        ':username': body.username,
-                        ':email': body.email,
-                        ':password_hash': body.password
-                    })
-                    return Response.json({
-                        message: "Usuário cadastrado com sucesso",
-                        dbResp
-                    })
-
-                } catch (e: any) {
-                    if (e.code == "SQLITE_CONSTRAINT_UNIQUE") {
-                        return Response.json({
-                            message: "Username e Email precisam ser únicos",
-                            code: "UNIQUE:CONSTRAINT"
-                        }, { status: 400 })
-                    }
-                    return Response.json({
-                        message: "Erro ao inserir no banco de dados",
-                        dbError: e
-                    }, { status: 500 })
-                }
-            }
+                const dbResp = query.run({
+                    ':username': body.username,
+                    ':email': body.email,
+                    ':password_hash': body.password
+                })
+                return Response.json({
+                    "message": "deu boa garote!",
+                    dbResp
+                })
+            },
         },
-
 
         "/user/:id": {
             GET: (req) => {
                 const id = req.params.id
-                const query = db.query(`
-                    SELECT * FROM users
-                    WHERE id = :id
-                `)
-                const data = query.get({
-                    ':id': id
-                })
+                const query = db.query(`SELECT * FROM users WHERE id=:id`)
+                const data = query.get({ ':id': id })
                 return Response.json(data)
             },
 
-            PUT: async (req) => {
+            PUT: async(req) => {
                 const body = await req.body.json()
-                const query = db.query(`
-                    UPDATE users
-                    SET username = :username,
-                        email = :email,
-                        password_hash = :password
-                    WHERE id = :id
-                `)
-
+                const query = db.query(`UPDATE users SET username = :username, email = :email, password_hash = :password WHERE id = :id`)
                 const dbResp = query.run({
                     ':username': body.username,
                     ':email': body.email,
@@ -106,15 +59,21 @@ const srv = Bun.serve({
             },
 
             DELETE: (req) => {
-                const query = db.query(`
-                    DELETE FROM users
-                    WHERE id = :id
-                `)
-                const data = query.run({
-                    ':id': req.params.id
-                })
+                const query = db.query(`DELETE FROM users WHERE id=:id`)
+                const data = query.run({ ':id': req.params.id })
                 return Response.json(data)
-            }
+            },
+        },
+
+        "/coisa": {
+            GET: () => Response.json({}, { status: 501 }),
+            POST: () => Response.json({}, { status: 501 }),
+        },
+
+        "/coisa/:id": {
+            GET: () => Response.json({}, { status: 501 }),
+            PUT: () => Response.json({}, { status: 501 }),
+            DELETE: () => Response.json({}, { status: 501 }),
         },
 
         "/musica": {
@@ -178,7 +137,6 @@ const srv = Bun.serve({
             }
         },
 
-
         "/musica/:id": {
             GET: (req) => {
                 const id = req.params.id
@@ -221,8 +179,7 @@ const srv = Bun.serve({
                 return Response.json(data)
             }
         }
-
-    }
-})
+    }}
+)
 
 console.log(`Servidor em ${srv.url}`)

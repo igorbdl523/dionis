@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang='pt-BR'>
+<head>
+    <meta charset='utf-8'>
+    <title>App</title>
+</head>
+<body>
+    <ul></ul>
+
+    <input type="number">
+    <button>buscar um</button>
+    <div>o valor aqui</div>
+
+    <script>
+        const list = document.querySelector("ul")
+        botao = document.querySelector(button)
+        valorinput = document.querySelector(input)
+        div = document.querySelector(div)
+        const valor = 0
+         addEventListener(botao, click => {
+            valor = num(div)
+            div.innerHTML = valor
+        })
+        async function init() {
+            const response = await fetch("/user")
+            const body = await response.json()
+            body.forEach(user => {
+                list.innerHTML += `<li>${user.username}</li>`
+            })
+        }
+        init()
+    </script>
+</body>
+</html>
