@@ -1,34 +1,50 @@
 <!DOCTYPE html>
-<html lang='pt-BR'>
+<html lang="pt-BR">
+
 <head>
-    <meta charset='utf-8'>
-    <title>App</title>
+    <meta charset="UTF-8">
+    <title>Login</title>
 </head>
+
 <body>
-    <ul></ul>
-
-    <input type="number">
-    <button>buscar um</button>
-    <div>o valor aqui</div>
-
+    <form>
+        <input type="text" name="username" placeholder="email de login">
+        <input type="password" name="password" placeholder="senha">
+        <button>entrar</button>
+    </form>
+    <form>
+        <input type="text" name="username" placeholder="email de login">
+        <input type="password" name="password" placeholder="senha">
+        <button>cadastrar-se</button>
+    </form>
     <script>
-        const list = document.querySelector("ul")
-        botao = document.querySelector(button)
-        valorinput = document.querySelector(input)
-        div = document.querySelector(div)
-        const valor = 0
-         addEventListener(botao, click => {
-            valor = num(div)
-            div.innerHTML = valor
-        })
-        async function init() {
-            const response = await fetch("/user")
-            const body = await response.json()
-            body.forEach(user => {
-                list.innerHTML += `<li>${user.username}</li>`
+        const frmLogin = document.querySelector('form')
+        
+        frmLogin.addEventListener('submit', async (ev) => {
+            ev.preventDefault()
+            const response = await fetch("/login", {
+                method: "POST",
+                headers: { "Content-type": "application/json" },
+                body: JSON.stringify({
+                    "username": frmLogin.username.value,
+                    "password": frmLogin.password.value
+                })
             })
-        }
-        init()
+
+            if (response.status == 404)
+                return alert("Usuário não encontrado")
+
+            if (response.status == 401)
+                return alert("Senha incorreta")
+
+            if (response.ok) {
+                window.location.href = "/home"
+                return
+            }
+
+            alert("Não deveria chegar aqui")
+        }) 
     </script>
 </body>
+
 </html>

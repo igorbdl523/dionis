@@ -1,185 +1,52 @@
-//            BANCO DE DADOS     HTTP
-// [C]reat    insert             post
-// [R]read    select             get
-// [U]pdate   update             put
-// [U]pdate   update             patch
-// [D]elete   delete             delete
+import login from "./index.html"
+import home from "./home.html"
+import db from "./db"
 
-import frontend from "./index.html"
-import { db } from "./db"
+const loggedUsers: any = {}
 
 const srv = Bun.serve({
     port: 3000,
     routes: {
-        "/": frontend,
+        "/": login,
+        "/home": home,
 
         "/user": {
-            GET: () => {
-                const query = db.query(`SELECT * FROM users`)
-                const data = query.all()
-                return Response.json(data)
-            },
-
             POST: async (req) => {
-                const body = await req.body.json()
-                const query = db.query(`
-                    INSERT INTO users(username, email, password_hash)
-                    VALUES(:username, :email, :password_hash)
-                `)
-                const dbResp = query.run({
-                    ':username': body.username,
-                    ':email': body.email,
-                    ':password_hash': body.password
-                })
-                return Response.json({
-                    "message": "deu boa garote!",
-                    dbResp
-                })
-            },
-        },
-
-        "/user/:id": {
-            GET: (req) => {
-                const id = req.params.id
-                const query = db.query(`SELECT * FROM users WHERE id=:id`)
-                const data = query.get({ ':id': id })
+                const body = await req.body?.json()
+                const query = db.query(`INSERT INTO user(username, password_hash) VALUES(:username, :password_hash)`)
+                const hash = await Bun.password.hash(body.password)
+                const data = query.run({ ":username": body.username, ":password_hash": hash })
                 return Response.json(data)
-            },
-
-            PUT: async(req) => {
-                const body = await req.body.json()
-                const query = db.query(`UPDATE users SET username = :username, email = :email, password_hash = :password WHERE id = :id`)
-                const dbResp = query.run({
-                    ':username': body.username,
-                    ':email': body.email,
-                    ':password': body.password,
-                    ':id': req.params.id
-                })
-                return Response.json(dbResp)
-            },
-
-            DELETE: (req) => {
-                const query = db.query(`DELETE FROM users WHERE id=:id`)
-                const data = query.run({ ':id': req.params.id })
-                return Response.json(data)
-            },
-        },
-
-        "/coisa": {
-            GET: () => Response.json({}, { status: 501 }),
-            POST: () => Response.json({}, { status: 501 }),
-        },
-
-        "/coisa/:id": {
-            GET: () => Response.json({}, { status: 501 }),
-            PUT: () => Response.json({}, { status: 501 }),
-            DELETE: () => Response.json({}, { status: 501 }),
-        },
-
-        "/musica": {
-            GET: () => {
-                const query = db.query(`
-                    SELECT * FROM musicas
-                `)
-                const data = query.all()
-                return Response.json(data)
-            },
-
-            POST: async (req) => {
-                let body
-                try {
-                    body = await req.body.json()
-                } catch (error: any) {
-                    return Response.json({
-                        message: "JSON mal formado",
-                        parseError: error
-                    }, { status: 400 })
-                }
-
-                if (!body.nome)
-                    return Response.json({
-                        message: "Falta da informação: nome"
-                    }, { status: 400 })
-
-                if (!body.autor)
-                    return Response.json({
-                        message: "Falta da informação: autor"
-                    }, { status: 400 })
-
-                if (!body.genero)
-                    return Response.json({
-                        message: "Falta da informação: genero"
-                    }, { status: 400 })
-
-                const query = db.query(`
-                    INSERT INTO musicas(nome, autor, genero)
-                    VALUES(:nome, :autor, :genero)
-                `)
-
-                try {
-                    const dbResp = query.run({
-                        ':nome': body.nome,
-                        ':autor': body.autor,
-                        ':genero': body.genero
-                    })
-                    return Response.json({
-                        message: "Música cadastrada com sucesso",
-                        dbResp
-                    })
-
-                } catch (e: any) {
-
-                    return Response.json({
-                        message: "Erro ao inserir no banco de dados",
-                        dbError: e
-                    }, { status: 500 })
-                }
             }
         },
 
-        "/musica/:id": {
-            GET: (req) => {
-                const id = req.params.id
-                const query = db.query(`
-                    SELECT * FROM musicas
-                    WHERE id = :id
-                `)
-                const data = query.get({
-                    ':id': id
-                })
-                return Response.json(data)
-            },
-
-            PUT: async (req) => {
-                const body = await req.body.json()
-                const query = db.query(`
-                    UPDATE musicas
-                    SET nome = :nome,
-                        autor = :autor,
-                        genero = :genero
-                    WHERE id = :id
-                `)
-                const dbResp = query.run({
-                    ':nome': body.nome,
-                    ':autor': body.autor,
-                    ':genero': body.genero,
-                    ':id': req.params.id
-                })
-                return Response.json(dbResp)
-            },
-
-            DELETE: (req) => {
-                const query = db.query(`
-                    DELETE FROM musicas
-                    WHERE id = :id
-                `)
-                const data = query.run({
-                    ':id': req.params.id
-                })
-                return Response.json(data)
+        "/login": {
+            POST: async (req) => {
+                const body = await req.body?.json()
+                const query = db.query(`SELECT * FROM user WHERE username=:username LIMIT 1`)
+                const data: any = query.get({ ":username": body.username })
+                if (!data)
+                    return Response.json({ msg: "usuário não encontrado" }, { status: 404 })
+                const hash = data.password_hash
+                const isMatch = await Bun.password.verify(body.password, hash)
+                if (!isMatch)
+                    return Response.json({ msg: "senha incorreta" }, { status: 401 })
+                const uuid = crypto.randomUUID()
+                delete data.password_hash
+                loggedUsers[uuid] = data
+                req.cookies.set("ses", uuid)
+                return Response.json(isMatch)
             }
+        },
+
+        "/login/user": (req) => {
+            const ses = req.cookies.get("ses") as string
+            const data = loggedUsers[ses]
+            if (!ses || !data)
+                return Response.json({ msg: "usuário não esta logado" }, { status: 401 })
+            return Response.json(data)
         }
-    }}
-)
+    }
+})
 
-console.log(`Servidor em ${srv.url}`)
+console.log(`Server running on ${srv.url}`)
