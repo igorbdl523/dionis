@@ -21,3 +21,4 @@ db.query(`
 `).run();
 
 export { db };
+export default db
