@@ -3,10 +3,10 @@ import { Database } from "bun:sqlite";
 const db = new Database("database.sqlite");
 
 db.query(`
-    CREATE TABLE IF NOT EXISTS users (
+    CREATE TABLE IF NOT EXISTS user (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         username TEXT NOT NULL UNIQUE,
-        email TEXT NOT NULL UNIQUE,
+        email TEXT NULL UNIQUE,
         password_hash TEXT NOT NULL
     )
 `).run();

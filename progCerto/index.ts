@@ -10,8 +10,8 @@ const srv = Bun.serve({
         "/": login,
         "/home": home,
 
-        "/user": {
-            POST: async (req) => {
+        "/cadastro":{
+                POST: async (req) => {
                 const body = await req.body?.json()
                 const query = db.query(`INSERT INTO user(username, password_hash) VALUES(:username, :password_hash)`)
                 const hash = await Bun.password.hash(body.password)
@@ -20,6 +20,7 @@ const srv = Bun.serve({
             }
         },
 
+        
         "/login": {
             POST: async (req) => {
                 const body = await req.body?.json()

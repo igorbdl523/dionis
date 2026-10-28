@@ -7,19 +7,21 @@
 </head>
 
 <body>
-    <form>
+    <form id="login">
         <input type="text" name="username" placeholder="email de login">
         <input type="password" name="password" placeholder="senha">
         <button>entrar</button>
     </form>
-    <form>
+    <form id="cadastro">
         <input type="text" name="username" placeholder="email de login">
         <input type="password" name="password" placeholder="senha">
         <button>cadastrar-se</button>
     </form>
     <script>
-        const frmLogin = document.querySelector('form')
-        
+        const frmLogin = document.querySelector('#login')
+        const frmcadastro = document.querySelector('#cadastro')
+
+
         frmLogin.addEventListener('submit', async (ev) => {
             ev.preventDefault()
             const response = await fetch("/login", {
@@ -41,9 +43,24 @@
                 window.location.href = "/home"
                 return
             }
-
-            alert("Não deveria chegar aqui")
         }) 
+        
+        frmcadastro.addEventListener('submit', async (ev) => {
+            ev.preventDefault()
+            const responseCadastro = await fetch("/cadastro", {
+                method: "POST",
+                headers: { "Content-type": "application/json" },
+                body: JSON.stringify({
+                    "username": frmcadastro.username.value,
+                    "password": frmcadastro.password.value
+                })
+            }
+        )
+          if(responseCadastro.ok){
+          alert("deu certo")
+          }}
+        
+    )
     </script>
 </body>
 
